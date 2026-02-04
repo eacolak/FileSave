@@ -1,13 +1,22 @@
-
 from pydantic import Field, validator
-from typing import List, Optional, Union, Literal
-from sdks.novavision.src.base.model import Package, Image, Inputs, Configs, Outputs, Response, Request, Output, Input, Config
+from typing import List, Optional, Union, Any, Dict,Literal
+
+from sdks.novavision.src.base.model import Package, Image, Param, Inputs, Configs, Outputs, Response, Request,Output,Input,Config
 
 
-class InputImage(Input):
-    name: Literal["inputImage"] = "inputImage"
-    value: Union[List[Image], Image]
-    type: str = "object"
+class OutputText(Output):
+    name: Literal["outputText"] = "outputText"
+    value: str
+    type: Literal["string"] = "string"
+
+    class Config:
+        title = "Text"
+
+
+class InputContent(Input):
+    name: Literal["inputContent"] = "inputContent"
+    value: Union[List[Image],Image,Dict]
+    type: str = ""
 
     @validator("type", pre=True, always=True)
     def set_type_based_on_value(cls, value, values):
@@ -16,91 +25,211 @@ class InputImage(Input):
             return "object"
         elif isinstance(value, list):
             return "list"
+        elif isinstance(value, dict):
+            return "dict"
 
     class Config:
         title = "Image"
 
 
-class OutputImage(Output):
-    name: Literal["outputImage"] = "outputImage"
-    value: Union[List[Image],Image]
-    type: str = "object"
-
-    @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
-        value = values.get('value')
-        if isinstance(value, Image):
-            return "object"
-        elif isinstance(value, list):
-            return "list"
-
+class ConfigHeaderEnable(Config):
+    name: Literal["ConfigHeaderEnable"] = "ConfigHeaderEnable"
+    value: Literal["enable"] = "enable"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
     class Config:
-        title = "Image"
+        title = "Enable"
 
 
-class KeepSideFalse(Config):
-    name: Literal["False"] = "False"
-    value: Literal[False] = False
-    type: Literal["bool"] = "bool"
+class ConfigHeaderDisable(Config):
+    name: Literal["ConfigHeaderDisable"] = "ConfigHeaderDisable"
+    value: Literal["disable"] = "disable"
+    type: Literal["string"] = "string"
     field: Literal["option"] = "option"
 
     class Config:
         title = "Disable"
 
 
-class KeepSideTrue(Config):
-    name: Literal["True"] = "True"
-    value: Literal[True] = True
-    type: Literal["bool"] = "bool"
-    field: Literal["option"] = "option"
-
-    class Config:
-        title = "Enable"
-
-
-class KeepSideBBox(Config):
+class ConfigHeader(Config):
     """
-        Rotate image without catting off sides.
+    Determines whether to write the column names as the first row in the CSV file.
     """
-    name: Literal["KeepSide"] = "KeepSide"
-    value: Union[KeepSideTrue, KeepSideFalse]
+    name: Literal["ConfigHeader"] = "ConfigHeader"
+    value: Union[ConfigHeaderEnable,ConfigHeaderDisable]
     type: Literal["object"] = "object"
     field: Literal["dropdownlist"] = "dropdownlist"
 
     class Config:
-        title = "Keep Sides"
+        title="Header"
+        json_schema_extra = {
+            "shortDescription": "Include Column Headers"
+        }
 
 
-class Degree(Config):
-    """
-        Positive angles specify counterclockwise rotation while negative angles indicate clockwise rotation.
-    """
-    name: Literal["Degree"] = "Degree"
-    value: int = Field(ge=-359.0, le=359.0,default=0)
-    type: Literal["number"] = "number"
-    field: Literal["textInput"] = "textInput"
-    placeHolder: Literal["[-359, 359]"] = "[-359, 359]"
+class FileTypeCsv(Config):
+    name: Literal["FileTypeCsv"] = "FileTypeCsv"
+    value: Literal["csv"] = "csv"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+    configHeader: ConfigHeader
 
     class Config:
-        title = "Angle"
+        title="CSV"
 
 
-class PackageInputs(Inputs):
-    inputImage: InputImage
+class FileTypeImage(Config):
+    name: Literal["FileTypeImage"] = "FileTypeImage"
+    value: Literal["image"] = "image"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title="Image"
 
 
-class PackageConfigs(Configs):
-    degree: Degree
-    drawBBox: KeepSideBBox
+class ConfigFileType(Config):
+    """
+    Selects the format of the output file.
+    Use 'CSV' for tabular text data and 'Image' for visual data.
+    """
+    name: Literal["ConfigFileType"] = "ConfigFileType"
+    value: Union[FileTypeCsv, FileTypeImage]
+    type: Literal["object"] = "object"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+
+    class Config:
+        title = "File Type"
+        json_schema_extra = {
+            "shortDescription": "Output Format"
+        }
 
 
-class PackageOutputs(Outputs):
-    outputImage: OutputImage
+class TargetStorage(Config):
+    name: Literal["TargetStorage"] = "TargetStorage"
+    value: Literal["storage"] = "storage"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Storage"
 
 
-class PackageRequest(Request):
-    inputs: Optional[PackageInputs]
-    configs: PackageConfigs
+class LocalPath(Config):
+    """
+    The absolute path on the local file system where the file will be saved.
+    Example: C:/Users/Admin/Documents/
+    """
+    name: Literal["LocalPath"] = "LocalPath"
+    value: str
+    type: Literal["string"] = "string"
+    field: Literal["textInput"] = "textInput"
+
+    class Config:
+        title = "Local Path"
+        json_schema_extra = {
+            "shortDescription": "Absolute System Path"
+        }
+
+
+class TargetLocal(Config):
+    name: Literal["TargetLocal"] = "TargetLocal"
+    value: Literal["local"] = "local"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+    localPath: LocalPath
+
+    class Config:
+        title = "Local"
+
+
+class ConfigTargetDirectory(Config):
+    """
+    Choose where to save the file.
+    - Storage: Uses the system's internal managed storage.
+    - Local: Allows saving to a custom path on the OS.
+    """
+    name: Literal["ConfigTargetDirectory"] = "ConfigTargetDirectory"
+    value: Union[TargetStorage, TargetLocal]
+    type: Literal["object"] = "object"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+
+    class Config:
+        title = "Target Directory"
+        json_schema_extra = {
+            "shortDescription": "Destination Location"
+        }
+
+
+class TimeStamp(Config):
+    name: Literal["TimeStamp"] = "TimeStamp"
+    value: Literal["TimeStamp"] = "TimeStamp"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Time Stamp"
+
+
+class Count(Config):
+    name: Literal["Count"] = "Count"
+    value: Literal["Count"] = "Count"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Count"
+
+
+class ConfigfileNameSuffix(Config):
+    """
+    Appends a suffix to the filename to prevent overwriting.
+    - TimeStamp: Adds the date and time (e.g., file_20231025.jpg).
+    - Count: Adds an incremental number (e.g., file_01.jpg, file_02.jpg).
+    """
+    name: Literal["ConfigfileNameSuffix"] = "ConfigfileNameSuffix"
+    value: Union[TimeStamp, Count]
+    type: Literal["object"] = "object"
+    field: Literal["dropdownlist"] = "dropdownlist"
+
+    class Config:
+        title = "Name Suffix"
+        json_schema_extra = {
+            "shortDescription": "Naming Convention"
+        }
+
+
+class ConfigFileName(Config):
+    """
+    The base name of the file (without extension or suffix).
+    e.g., entering 'result' creates 'result_01.jpg'.
+    """
+    name: Literal["ConfigFileName"] = "ConfigFileName"
+    value: str
+    type: Literal["string"] = "string"
+    field: Literal["textInput"] = "textInput"
+
+    class Config:
+        title = "File Name"
+        json_schema_extra = {
+            "shortDescription": "Base Filename"
+        }
+
+
+class FileSaveInputs(Inputs):
+    inputContent: InputContent
+
+
+class FileSaveConfigs(Configs):
+    configFileType: ConfigFileType
+    configTargetDirectory: ConfigTargetDirectory
+    configFileName: ConfigFileName
+    configfileNameSuffix: ConfigfileNameSuffix
+
+
+class FileSaveRequest(Request):
+    inputs: Optional[FileSaveInputs]
+    configs: FileSaveConfigs
 
     class Config:
         json_schema_extra = {
@@ -108,18 +237,22 @@ class PackageRequest(Request):
         }
 
 
-class PackageResponse(Response):
-    outputs: PackageOutputs
+class FileSaveOutputs(Outputs):
+    outputText: OutputText
 
 
-class PackageExecutor(Config):
-    name: Literal["Package"] = "Package"
-    value: Union[PackageRequest, PackageResponse]
+class FileSaveResponse(Response):
+    outputs: FileSaveOutputs
+
+
+class FileSaveExecutor(Config):
+    name: Literal["FileSave"] = "FileSave"
+    value: Union[FileSaveRequest, FileSaveResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Package"
+        title = "File Save"
         json_schema_extra = {
             "target": {
                 "value": 0
@@ -129,7 +262,7 @@ class PackageExecutor(Config):
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    value: Union[PackageExecutor]
+    value: Union[FileSaveExecutor]
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
 
@@ -147,4 +280,4 @@ class PackageConfigs(Configs):
 class PackageModel(Package):
     configs: PackageConfigs
     type: Literal["component"] = "component"
-    name: Literal["Package"] = "Package"
+    name: Literal["FileSave"] = "FileSave"
