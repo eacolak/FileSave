@@ -12,7 +12,7 @@ from components.FileSave.src.utils.response import build_csv_save_response
 from components.FileSave.src.utils.utils import save_image_local, save_csv_local
 
 
-class FileSave(Component):
+class CSVSave(Component):
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
         self.request.model = PackageModel(**(self.request.data))
