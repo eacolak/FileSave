@@ -19,7 +19,6 @@ class CSVSave(Component):
         self.fileName = self.request.get_param("ConfigFileName")
         self.suffix_config = self.request.get_param("ConfigfileNameSuffix")
         self.localPath = self.request.get_param("LocalPath")
-        self.inputContent = self.request.get_param("inputContent")
         self.headerConfig = self.request.get_param("ConfigHeader")
         self.inputData = self.request.get_param("inputData")
 
@@ -39,7 +38,7 @@ class CSVSave(Component):
             # CSV için inputContent'in bir Dictionary (Sözlük) olması beklenir.
             # Örn: {"isim": "Ali", "yas": 25}
             self.output_message = save_csv_local(
-                context_data=self.inputContent,
+                context_data=self.inputData,
                 local_path=self.localPath,
                 base_file_name=self.fileName,
                 suffix_config=self.suffix_config,
