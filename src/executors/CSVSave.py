@@ -23,6 +23,7 @@ class CSVSave(Component):
         self.filetype = self.request.get_param("ConfigFileType")
         self.inputContent = self.request.get_param("inputContent")
         self.headerConfig = self.request.get_param("ConfigHeader")
+        self.inputData = self.request.get_param("inputData")
 
     @staticmethod
     def bootstrap(config: dict) -> dict:
@@ -35,6 +36,9 @@ class CSVSave(Component):
 
         # --- CSV MODU ---
         if self.filetype == "csv":
+
+            print(f"inputData = {self.inputData}")
+
             try:
                 # CSV için inputContent'in bir Dictionary (Sözlük) olması beklenir.
                 # Örn: {"isim": "Ali", "yas": 25}
