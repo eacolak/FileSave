@@ -215,7 +215,7 @@ class ImageSave(Config):
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Save as Image"
+        title = "Image"
         json_schema_extra = {"target": {"value": 0}}
 
 
@@ -253,7 +253,7 @@ class CSVSave(Config):
     field: Literal["option"] = "option"
 
     class Config:
-        title = "Save as CSV"
+        title = "CSV"
         json_schema_extra = {"target": {"value": 0}}
 
 
