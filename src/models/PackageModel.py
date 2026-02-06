@@ -3,6 +3,23 @@ from typing import List, Optional, Union, Any, Dict,Literal
 from sdks.novavision.src.base.model import Package, Image, Param, Inputs, Configs, Outputs, Response, Request,Output,Input,Config
 
 
+class InputData(Input):
+    name: Literal["inputData"] = "inputData"
+    value: Union[list, dict, str]
+    type: str = "object"
+
+    @model_validator(mode="after")
+    def set_type(self):
+        if isinstance(self.value, str):
+            self.type = "string"
+        elif isinstance(self.value, (list, dict)):
+            self.type = "object"
+        return self
+
+    class Config:
+        title = "Data"
+
+
 class OutputText(Output):
     name: Literal["outputText"] = "outputText"
     value: str
@@ -14,7 +31,7 @@ class OutputText(Output):
 
 class InputContent(Input):
     name: Literal["inputContent"] = "inputContent"
-    value: Union[List[Image],Image,Dict]
+    value: Union[List[Image], Image, Dict]
     type: str = ""
 
     @validator("type", pre=True, always=True)
@@ -63,44 +80,6 @@ class ConfigHeader(Config):
         title="Header"
         json_schema_extra = {
             "shortDescription": "Include Column Headers"
-        }
-
-
-class FileTypeCsv(Config):
-    name: Literal["FileTypeCsv"] = "FileTypeCsv"
-    value: Literal["csv"] = "csv"
-    type: Literal["string"] = "string"
-    field: Literal["option"] = "option"
-    configHeader: ConfigHeader
-
-    class Config:
-        title="CSV"
-
-
-class FileTypeImage(Config):
-    name: Literal["FileTypeImage"] = "FileTypeImage"
-    value: Literal["image"] = "image"
-    type: Literal["string"] = "string"
-    field: Literal["option"] = "option"
-
-    class Config:
-        title="Image"
-
-
-class ConfigFileType(Config):
-    """
-    Selects the format of the output file.
-    Use 'CSV' for tabular text data and 'Image' for visual data.
-    """
-    name: Literal["ConfigFileType"] = "ConfigFileType"
-    value: Union[FileTypeCsv, FileTypeImage]
-    type: Literal["object"] = "object"
-    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-
-    class Config:
-        title = "File Type"
-        json_schema_extra = {
-            "shortDescription": "Output Format"
         }
 
 
@@ -215,20 +194,20 @@ class ConfigFileName(Config):
         }
 
 
-class FileSaveInputs(Inputs):
+
+class ImageInputs(Inputs):
     inputContent: InputContent
 
 
-class FileSaveConfigs(Configs):
-    configFileType: ConfigFileType
+class ImageConfigs(Configs):
     configTargetDirectory: ConfigTargetDirectory
     configFileName: ConfigFileName
     configfileNameSuffix: ConfigfileNameSuffix
 
 
-class FileSaveRequest(Request):
-    inputs: Optional[FileSaveInputs]
-    configs: FileSaveConfigs
+class ImageRequest(Request):
+    inputs: Optional[ImageInputs]
+    configs: ImageConfigs
 
     class Config:
         json_schema_extra = {
@@ -236,22 +215,22 @@ class FileSaveRequest(Request):
         }
 
 
-class FileSaveOutputs(Outputs):
+class ImageOutputs(Outputs):
     outputText: OutputText
 
 
-class FileSaveResponse(Response):
-    outputs: FileSaveOutputs
+class ImageResponse(Response):
+    outputs: ImageOutputs
 
 
-class FileSaveExecutor(Config):
-    name: Literal["FileSave"] = "FileSave"
-    value: Union[FileSaveRequest, FileSaveResponse]
+class ImageExecutor(Config):
+    name: Literal["ImageSave"] = "ImageSave"
+    value: Union[ImageRequest, ImageResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
 
     class Config:
-        title = "File Save"
+        title = "Image Save"
         json_schema_extra = {
             "target": {
                 "value": 0
@@ -259,14 +238,57 @@ class FileSaveExecutor(Config):
         }
 
 
+
+class CSVInputs(Inputs):
+    inputData: InputData
+
+
+class CSVConfigs(Configs):
+    configTargetDirectory: ConfigTargetDirectory
+    configFileName: ConfigFileName
+    configfileNameSuffix: ConfigfileNameSuffix
+
+
+class CSVRequest(Request):
+    inputs: Optional[CSVInputs]
+    configs: CSVConfigs
+
+    class Config:
+        json_schema_extra = {
+            "target": "configs"
+        }
+
+
+class CSVOutputs(Outputs):
+    outputText: OutputText
+
+
+class CSVResponse(Response):
+    outputs: CSVOutputs
+
+
+class CSVExecutor(Config):
+    name: Literal["CSVSave"] = "CSVSave"
+    value: Union[CSVRequest, CSVResponse]
+    type: Literal["object"] = "object"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "CSV Save"
+        json_schema_extra = {
+            "target": {
+                "value": 0
+            }
+        }
+
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    value: Union[FileSaveExecutor]
+    value: Union[ImageExecutor, CSVExecutor]
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
 
     class Config:
-        title = "Task"
+        title = "File Type"
         json_schema_extra = {
             "target": "value"
         }
