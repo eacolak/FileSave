@@ -17,7 +17,7 @@ class CSVSave(Component):
         self.request.model = PackageModel(**(self.request.data))
         self.targetDirectory = self.request.get_param("ConfigTargetDirectory")
         self.fileName = self.request.get_param("ConfigFileName")
-        self.suffix_config = self.request.get_param("ConfigfileNameSuffix")
+        self.suffix_config = self.request.get_param("ConfigFileNameSuffix")
         self.localPath = self.request.get_param("LocalPath")
         self.headerConfig = self.request.get_param("ConfigHeader")
         self.inputData = self.request.get_param("inputData")
@@ -31,12 +31,9 @@ class CSVSave(Component):
     def run(self):
         self.output_message = ""
 
-        # --- CSV MODU ---
         print(f"inputData = {self.inputData}")
-
+        print(f"[DEBUG] self.suffix_config: {self.suffix_config}")
         try:
-            # CSV için inputContent'in bir Dictionary (Sözlük) olması beklenir.
-            # Örn: {"isim": "Ali", "yas": 25}
             self.output_message = save_csv_local(
                 context_data=self.inputData,
                 local_path=self.localPath,
