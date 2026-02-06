@@ -3,7 +3,7 @@ from components.FileSave.src.models.PackageModel import (
     PackageModel, PackageConfigs, ConfigExecutor,
     ImageSave, ImageResponse, ImageOutputs,
     CSVSave, CSVResponse, CSVOutputs,
-    OutputText
+    OutputText, OutputData
 )
 
 
@@ -22,7 +22,7 @@ def build_image_save_response(context):
 
 
 def build_csv_save_response(context):
-    output_text = OutputText(value=context.output_message)
+    output_text = OutputData(value=context.output_message)
     csv_outputs = CSVOutputs(outputData=output_text)
     csv_response = CSVResponse(outputs=csv_outputs)
     csv_executor = CSVSave(value=csv_response)

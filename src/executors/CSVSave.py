@@ -8,7 +8,6 @@ from sdks.novavision.src.base.component import Component
 from sdks.novavision.src.helper.executor import Executor
 from components.FileSave.src.models.PackageModel import PackageModel
 from components.FileSave.src.utils.response import build_csv_save_response
-# İki fonksiyonu da import ediyoruz
 from components.FileSave.src.utils.utils import save_image_local, save_csv_local
 
 
@@ -20,7 +19,6 @@ class CSVSave(Component):
         self.fileName = self.request.get_param("ConfigFileName")
         self.suffix_config = self.request.get_param("ConfigfileNameSuffix")
         self.localPath = self.request.get_param("LocalPath")
-        self.filetype = self.request.get_param("ConfigFileType")
         self.inputContent = self.request.get_param("inputContent")
         self.headerConfig = self.request.get_param("ConfigHeader")
         self.inputData = self.request.get_param("inputData")
