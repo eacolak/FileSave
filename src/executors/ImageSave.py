@@ -7,7 +7,7 @@ from sdks.novavision.src.media.image import Image
 from sdks.novavision.src.base.component import Component
 from sdks.novavision.src.helper.executor import Executor
 from components.FileSave.src.models.PackageModel import PackageModel
-from components.FileSave.src.utils.response import build_response
+from components.FileSave.src.utils.response import build_csv_save_response
 # İki fonksiyonu da import ediyoruz
 from components.FileSave.src.utils.utils import save_image_local, save_csv_local
 
