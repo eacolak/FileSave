@@ -23,7 +23,7 @@ def build_image_save_response(context):
 
 def build_csv_save_response(context):
     output_text = OutputText(value=context.output_message)
-    csv_outputs = CSVOutputs(outputText=output_text)
+    csv_outputs = CSVOutputs(outputData=output_text)
     csv_response = CSVResponse(outputs=csv_outputs)
     csv_executor = CSVSave(value=csv_response)
     config_executor = ConfigExecutor(value=csv_executor)
