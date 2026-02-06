@@ -31,11 +31,12 @@ class CSVSave(Component):
     def run(self):
         self.output_message = ""
 
-        print(f"inputData = {self.inputData}")
-        print(f"[DEBUG] self.suffix_config: {self.suffix_config}")
+        img = Image.get_frame(img=self.inputData, redis_db=self.redis_db)
+        img = Image.encode64(img)
+
         try:
             self.output_message = save_csv_local(
-                context_data=self.inputData,
+                context_data=img,
                 local_path=self.localPath,
                 base_file_name=self.fileName,
                 suffix_config=self.suffix_config,
