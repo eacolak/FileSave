@@ -137,7 +137,7 @@ class ConfigHeader(Config):
     name: Literal["ConfigHeader"] = "ConfigHeader"
     value: Union[ConfigHeaderEnable, ConfigHeaderDisable]
     type: Literal["object"] = "object"
-    field: Literal["dropdownlist"] = "dropdownlist"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
 
     class Config:
         title = "Include Header"
@@ -161,7 +161,7 @@ class ConfigFileNameSuffix(Config):
     name: Literal["ConfigFileNameSuffix"] = "ConfigFileNameSuffix"
     value: Union[TimeStamp, Count]
     type: Literal["object"] = "object"
-    field: Literal["dropdownlist"] = "dropdownlist"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
 
     class Config:
         title = "Filename Suffix"
