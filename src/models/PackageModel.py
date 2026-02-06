@@ -246,6 +246,7 @@ class CSVInputs(Inputs):
 class CSVConfigs(Configs):
     configTargetDirectory: ConfigTargetDirectory
     configFileName: ConfigFileName
+    configHeader: ConfigHeader
     configfileNameSuffix: ConfigfileNameSuffix
 
 
