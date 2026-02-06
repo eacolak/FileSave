@@ -8,6 +8,18 @@ from sdks.novavision.src.base.model import (
 
 # --- INPUTS ---
 
+class OutputData(Output):
+    name: Literal["outputData"] = "outputData"
+    value: Union[list, dict, str]
+    type: str = "object"
+
+    @model_validator(mode="after")
+    def set_type(self):
+        if isinstance(self.value, str):
+            self.type = "string"
+        return self
+
+
 class InputData(Input):
     name: Literal["inputData"] = "inputData"
     value: Union[list, dict, str]
@@ -239,7 +251,7 @@ class CSVRequest(Request):
 
 
 class CSVOutputs(Outputs):
-    outputText: OutputText
+    outputData: OutputData
 
 
 class CSVResponse(Response):
