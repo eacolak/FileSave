@@ -137,10 +137,9 @@ def save_image_local(img_obj, local_path, base_file_name, suffix_config, bootstr
     return f"Image saved: {full_path}"
 
 
-# --- YENİ EKLENEN CSV FONKSİYONU ---
 def save_csv_local(context_data, local_path, base_file_name, suffix_config, bootstrap, header_config):
     """
-    Dictionary verisini CSV olarak kaydeder.
+    Dictionary veya List of Dictionaries verisini CSV olarak kaydeder.
     """
     print("\n" + "=" * 30)
     print("[DEBUG] save_csv_local fonksiyonu basladi.")
@@ -161,19 +160,39 @@ def save_csv_local(context_data, local_path, base_file_name, suffix_config, boot
         print(f"[DEBUG] Klasor olusturuluyor: {directory}")
         os.makedirs(directory)
 
-    # 3. Veri Kontrolü
-    if not isinstance(context_data, dict):
-        print(f"[ERROR] CSV icin inputContent DICT olmali. Gelen: {type(context_data)}")
-        # Eğer dict değilse string'e çevirip tek sütun gibi kaydetmeyi deneyebiliriz ama şu an hata verelim
-        raise ValueError(f"Input content must be a dictionary. Received: {type(context_data)}")
+    # --- 3. VERİ NORMALİZASYONU (Dict veya List kontrolü) ---
+    rows_to_write = []
 
-    row_values = list(context_data.values())
-    headers = list(context_data.keys())
+    # Eğer tek bir dict geldiyse, onu listeye koyarak standartlaştırıyoruz.
+    if isinstance(context_data, dict):
+        rows_to_write = [context_data]
+    # Eğer liste geldiyse, olduğu gibi kullanıyoruz.
+    elif isinstance(context_data, list):
+        rows_to_write = context_data
+    else:
+        print(f"[ERROR] CSV icin veri tipi hatali. Gelen: {type(context_data)}")
+        raise ValueError(f"Input content must be a dict or list of dicts. Received: {type(context_data)}")
+
+    # Liste boşsa işlem yapma
+    if not rows_to_write:
+        print("[WARNING] Kaydedilecek veri listesi bos.")
+        return {
+            "status": "skipped",
+            "message": "Empty data list",
+            "file_path": full_path
+        }
+
+    # Başlıkları (Headers) belirle - İlk öğenin anahtarlarını baz alıyoruz
+    # (Varsayım: Listedeki tüm sözlüklerin anahtarları aynıdır)
+    first_item = rows_to_write[0]
+    if not isinstance(first_item, dict):
+        raise ValueError(f"List items must be dictionaries. Found: {type(first_item)}")
+
+    headers = list(first_item.keys())
 
     # 4. Dosya var mı kontrolü (Header yazıp yazmamak için)
     file_exists = os.path.isfile(full_path)
     print(f"[DEBUG] Hedef dosya var mi? {file_exists}")
-    print(f"[DEBUG] Header Config: {header_config}")
 
     try:
         # append modunda aç ('a')
@@ -182,14 +201,33 @@ def save_csv_local(context_data, local_path, base_file_name, suffix_config, boot
 
             # Eğer header açık ise ve dosya daha önce yoksa başlıkları yaz
             if header_config == "enable" and not file_exists:
-                print("[DEBUG] Header satiri yaziliyor...")
+                print(f"[DEBUG] Header satiri yaziliyor: {headers}")
                 writer.writerow(headers)
 
-            print(f"[DEBUG] Veri satiri yaziliyor: {row_values}")
-            writer.writerow(row_values)
+            # --- DÖNGÜ İLE TÜM SATIRLARI YAZ ---
+            count = 0
+            for item in rows_to_write:
+                if isinstance(item, dict):
+                    # Values listesini alıp yazıyoruz
+                    row_values = list(item.values())
+                    # İsteğe bağlı: Nested dict'leri (boundingBox gibi) string'e çevirip basar.
+                    # Eğer özel bir format istersen burada row_values üzerinde işlem yapabilirsin.
+                    writer.writerow(row_values)
+                    count += 1
+                else:
+                    print(f"[WARNING] Listede dict olmayan oge atlandi: {type(item)}")
+
+            print(f"[DEBUG] Toplam {count} satir eklendi.")
 
         print(f"[SUCCESS] CSV basariyla guncellendi: {full_path}")
-        return f"Data appended to {full_path}"
+
+        # Dict olarak dönüş yapıyoruz (Response modeline uygun olması için)
+        return {
+            "status": "success",
+            "message": f"{count} rows appended successfully",
+            "file_path": full_path,
+            "saved_count": count
+        }
 
     except Exception as e:
         print(f"[ERROR] CSV yazma hatasi: {e}")
