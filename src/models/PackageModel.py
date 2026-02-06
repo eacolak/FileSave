@@ -290,7 +290,7 @@ class ConfigExecutor(Config):
     class Config:
         title = "File Type"
         json_schema_extra = {
-            "target": "value"
+            "shortDescription": "File Type"
         }
 
 
