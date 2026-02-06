@@ -64,7 +64,7 @@ class FileSave(Component):
             else:
                 self.output_message = "No image data found to save."
 
-        return build_response(context=self)
+        return build_csv_save_response(context=self)
 
 
 if "__main__" == __name__:
