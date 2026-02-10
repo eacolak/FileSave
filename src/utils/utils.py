@@ -83,58 +83,63 @@ def save_image_local(img_obj, local_path, base_file_name, suffix_config, bootstr
     return f"Image saved: {full_path}"
 
 
-
 def save_csv_local(context_data, local_path, base_file_name, suffix_config, bootstrap, header_config):
     if not local_path:
         raise ValueError("Local Path is required for CSV.")
 
-    final_file_name = generate_file_name(base_file_name, ".csv", suffix_config, bootstrap)
+    # 1. Dosya ismini SABİT tutmak için suffix_config'i burada "" (boş) gönderiyoruz.
+    # Böylece her seferinde 'base_file_name.csv' dosyasına yazar.
+    final_file_name = generate_file_name(base_file_name, ".csv", "", bootstrap)
     full_path = os.path.join(local_path, final_file_name)
     directory = os.path.dirname(full_path)
 
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    rows_to_write = []
+    # Şu anki zamanı alalım
+    current_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # --- VERİ HAZIRLAMA ---
+    raw_rows = []
+    # Veriyi listeye çevirme (Mevcut mantığın)
     if isinstance(context_data, list):
-        for item in context_data:
-            if isinstance(item, dict):
-                rows_to_write.append(item)
-            elif hasattr(item, "__dict__"):
-                rows_to_write.append(item.__dict__)
-            else:
-                rows_to_write.append({"value": str(item)})
-
+        raw_rows = context_data
     elif isinstance(context_data, dict):
-        rows_to_write.append(context_data)
-
+        raw_rows = [context_data]
     elif hasattr(context_data, "__dict__"):
-        rows_to_write.append(context_data.__dict__)
-
+        raw_rows = [context_data.__dict__]
     else:
-        rows_to_write.append({"raw_data": str(context_data)})
+        raw_rows = [{"raw_data": str(context_data)}]
 
+    # --- TIMESTAMP EKLEME ---
+    rows_to_write = []
+    for item in raw_rows:
+        # Orijinal veriyi bozmamak için kopyasını alıp timestamp ekliyoruz
+        row = item.copy() if isinstance(item, dict) else {"value": str(item)}
+        row["timestamp"] = current_ts  # Her satıra zaman damgası ekle
+        rows_to_write.append(row)
 
     if not rows_to_write:
-        return {
-            "status": "skipped",
-            "message": "Empty data provided",
-            "file_path": full_path
-        }
+        return {"status": "skipped", "message": "Empty data"}
 
     try:
+        # Dosya var mı ve boş mu kontrolü
         file_exists = os.path.isfile(full_path)
 
+        # Dinamik sütunları belirle
         all_keys = set()
         for row in rows_to_write:
             all_keys.update(row.keys())
 
-        fieldnames = sorted(list(all_keys))
+        # 'timestamp' sütununun en başta görünmesini sağlayalım
+        remaining_keys = sorted([k for k in all_keys if k != "timestamp"])
+        fieldnames = ["timestamp"] + remaining_keys
 
+        # 'a' modu (append) ile dosyayı açıyoruz
         with open(full_path, mode="a", newline='', encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
 
+            # Eğer dosya yeni oluşturuluyorsa başlığı yaz
             if header_config == "enable" and not file_exists:
                 writer.writeheader()
 
@@ -143,12 +148,10 @@ def save_csv_local(context_data, local_path, base_file_name, suffix_config, boot
                 writer.writerow(row)
                 count += 1
 
-
         return {
             "status": "success",
-            "message": f"{count} rows appended successfully",
-            "file_path": full_path,
-            "saved_count": count
+            "message": f"Added {count} rows to {final_file_name}",
+            "file_path": full_path
         }
 
     except Exception as e:
