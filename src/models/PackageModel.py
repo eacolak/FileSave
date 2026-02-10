@@ -6,7 +6,6 @@ from sdks.novavision.src.base.model import (
 )
 
 
-# --- INPUTS ---
 
 class OutputData(Output):
     name: Literal["outputData"] = "outputData"
@@ -57,7 +56,6 @@ class InputContent(Input):
         title = "Image Content"
 
 
-# --- OUTPUTS ---
 
 class OutputText(Output):
     name: Literal["outputText"] = "outputText"
@@ -68,7 +66,6 @@ class OutputText(Output):
         title = "Status Message"
 
 
-# --- CONFIG OPTIONS (Leaf Nodes) ---
 
 class ConfigHeaderEnable(Config):
     name: Literal["configHeaderEnable"] = "configHeaderEnable"
@@ -142,7 +139,6 @@ class Count(Config):
         title = "Incremental Count"
 
 
-# --- CONFIG PARAMETERS ---
 
 class ConfigHeader(Config):
     """Determines whether to write column names as the first row."""
@@ -192,7 +188,6 @@ class ConfigFileName(Config):
         json_schema_extra = {"shortDescription": "Initial file name"}
 
 
-# --- EXECUTOR AGGREGATIONS ---
 
 class ImageInputs(Inputs):
     inputContent: InputContent
@@ -269,7 +264,6 @@ class CSVSave(Config):
         json_schema_extra = {"target": {"value": 0}}
 
 
-# --- ROOT PACKAGE MODELS ---
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"

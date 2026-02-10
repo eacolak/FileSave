@@ -32,7 +32,6 @@ class ImageSave(Component):
     def run(self):
         self.output_message = ""
         if (self.targetDirectory == "local"):
-            print(f"inputContent: {self.inputContent}")
             img = Image.get_frame(img=self.inputContent, redis_db=self.redis_db)
 
             if img:
@@ -46,8 +45,10 @@ class ImageSave(Component):
             else:
                 self.output_message = "No image data found to save."
 
+
+
+
         else:
-            print(f"inputContent: {self.inputContent}")
             img = Image.get_frame(img=self.inputContent, redis_db=self.redis_db)
 
             if img:
