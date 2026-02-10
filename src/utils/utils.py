@@ -4,6 +4,14 @@ import csv
 import numpy as np
 from datetime import datetime
 
+from PIL import Image as PILImage
+from sdks.novavision.src.media.image import Image
+import requests
+import uuid
+import base64
+import io
+
+
 MIME_TO_EXT = {
     "image/png": ".png",
     "image/jpg": ".jpg",
@@ -18,13 +26,15 @@ def generate_file_name(base_name: str, ext: str, suffix_config: str, bootstrap: 
     if not base_name:
         base_name = "output"
 
+    print(f"suffix_config: {suffix_config}")
+
     name_part, given_ext = os.path.splitext(base_name)
     base = name_part if given_ext.lower() == ext.lower() else base_name
 
-    if suffix_config == "TimeStamp":
+    if suffix_config == "timeStamp":
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         final_name = f"{base}_{timestamp}{ext}"
-    elif suffix_config == "Count":
+    elif suffix_config == "count":
         idx = bootstrap.get("index", 0)
         final_name = f"{base}_{idx:04d}{ext}"
         bootstrap["index"] = idx + 1
@@ -38,7 +48,10 @@ def save_image_local(img_obj, local_path, base_file_name, suffix_config, bootstr
     if img_obj is None:
         raise ValueError("img_obj is None")
 
+    # 1. Dosya yolu ve isim hazırlığı
     ext = MIME_TO_EXT.get(img_obj.mimeType.lower(), ".png")
+
+    # yeni ismi üretiyor ve bootstrap['index'] değerini güncelliyor.
     final_file_name = generate_file_name(base_file_name, ext, suffix_config, bootstrap)
 
     if not local_path:
@@ -47,34 +60,38 @@ def save_image_local(img_obj, local_path, base_file_name, suffix_config, bootstr
     full_path = os.path.join(local_path, final_file_name)
     directory = os.path.dirname(full_path)
 
-    try:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-    except Exception as e:
-        raise e
+    # Klasör yoksa oluştur
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    try:
-        image_data = img_obj.value
-    except AttributeError:
-        raise
+    # 2. Veriyi doğrudan al (Matris/Numpy array)
+    image_data = img_obj.value
 
+    # 3. VERİ KONTROLÜ VE KAYDETME
     if isinstance(image_data, np.ndarray):
         if image_data.size == 0:
-            return "Error: Empty Image"
+            return "Error: Empty Image Data"
 
-        if image_data.dtype == np.float32 and image_data.max() <= 1.0:
-            image_data = (image_data * 255).astype(np.uint8)
+
+        # OpenCV uint8 formatını bekler (0-255)
+        if image_data.dtype == np.float32:
+            if image_data.max() <= 1.0:
+                image_data = (image_data * 255).astype(np.uint8)
+            else:
+                image_data = image_data.astype(np.uint8)
         elif image_data.dtype != np.uint8:
             image_data = image_data.astype(np.uint8)
 
+        # Matrisi fiziksel dosya olarak diske yaz
         success = cv2.imwrite(full_path, image_data)
 
         if not success:
             raise IOError(f"Failed to save image to {full_path}")
     else:
-        raise ValueError("Image data is not a valid numpy array.")
+        raise ValueError(f"Gelen veri matris değil: {type(image_data)}")
 
     return f"Image saved: {full_path}"
+
 
 
 def save_csv_local(context_data, local_path, base_file_name, suffix_config, bootstrap, header_config):
@@ -162,3 +179,47 @@ def save_csv_local(context_data, local_path, base_file_name, suffix_config, boot
     except Exception as e:
         print(f"[ERROR] CSV yazma hatasi: {e}")
         raise IOError(f"Failed to write CSV: {e}")
+
+
+def save_image_storage(self, img_obj, base_file_name, suffix_config, bootstrap):
+    if img_obj is None:
+        raise ValueError("img_obj is None")
+
+    try:
+
+        img_encoded = Image.encode64(img_obj)
+
+        img_bytes = base64.b64decode(img_encoded.value)
+        img_pill = PILImage.open(io.BytesIO(img_bytes))
+
+        temp_dir = "/storage/temp"
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        ext = MIME_TO_EXT.get(img_obj.mimeType.lower(), ".png")
+        final_file_name = generate_file_name(base_file_name, ext, suffix_config, bootstrap)
+
+        temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}{ext}")
+        img_pill.save(temp_path)
+
+        api_endpoint = f"{self.environment.web_api}/storage/default/upload?access-token={self.environment.device_access_token}"
+
+        print(f"api_endpoint: {api_endpoint}")
+
+        with open(temp_path, "rb") as f:
+            files = {"file": f}
+            response = requests.post(api_endpoint, files=files, data={"title": final_file_name})
+
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except Exception as e:
+            print(f"[WARN] Geçici dosya silinemedi: {e}")
+
+        if response.status_code == 200:
+            return f"Storage Upload Success: {response.text}"
+        else:
+            return f"Storage Upload Failed: {response.status_code} - {response.text}"
+
+    except Exception as e:
+        raise Exception(f"save_image_storage Error: {str(e)}")
